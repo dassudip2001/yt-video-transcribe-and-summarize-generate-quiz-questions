@@ -1,14 +1,33 @@
-import os
-from openai import OpenAI
-from dotenv import load_dotenv
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.config.config import  config
+import uvicorn
 
-load_dotenv()
+# heldth route
 
-client=OpenAI()
+from app.api.heldth import router as heldth
 
-audio_file=open(r"C:\Users\sudip\Downloads\langgrapth\backend\d3534a68-ce84-44e4-9f72-065923d99a27.webm","rb")
-
-transcript=client.audio.transcriptions.create(model="whisper-1", file=audio_file)
+app=FastAPI()
 
 
-print(transcript.text)
+
+
+origins = [
+   "*"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# register
+app.include_router(heldth)
+
+
+if __name__=="__main__":
+    uvicorn.run("main:app", host="0.0.0.0",port=config.port, reload=config.debug)

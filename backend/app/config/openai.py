@@ -1,7 +1,7 @@
 from openai import OpenAI
-import os
+from app.config.config import config
 
 
 
-client = OpenAI(key="")
+openAiClient = OpenAI(api_key=config.OPENAI_API_KEY)
 

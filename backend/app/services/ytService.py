@@ -2,6 +2,7 @@ import yt_dlp
 import uuid
 
 def download_video(url: str):
+    "Download video form url "
     unique_id=str(uuid.uuid4())
     ydl_opts={
        'format': 'bestaudio/best',
