@@ -1,3 +1,5 @@
+import asyncio
+
 from app.config.openai import openAiClient
 
 
@@ -18,10 +20,12 @@ async def generateSummarization(text:str):
     """
 
     try:
-        response=await openAiClient.responses.create(
+        # openAiClient.responses.create() is blocking (sync SDK), so run it in a thread.
+        response = await asyncio.to_thread(
+            openAiClient.responses.create,
             model="gpt-4o",
-            input=SUMMARIZATION_PROMPT.replace(f"{{text}}",text)
-        );
+            input=SUMMARIZATION_PROMPT.replace(f"{{text}}", text),
+        )
         return  response.output[0].content[0].text
     except Exception as e:
         return str(e)

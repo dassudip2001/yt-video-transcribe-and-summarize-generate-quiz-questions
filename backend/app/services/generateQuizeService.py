@@ -1,7 +1,12 @@
-from nt import replace
-from app.config.openai import openAiClient
+import asyncio
+import json
+import re
+from typing import Optional
 
-async def generateQuize(text:str):
+from app.config.openai import openAiClient
+from app.schema.schemas import QuizModel
+
+async def generateQuize(text: str):
     QUIZE_GENERATION_PROMPT=f""" 
         You are an expert teacher.
 
@@ -40,11 +45,29 @@ async def generateQuize(text:str):
         SUMMARY:
         {{SUMMARY_OUTPUT}}
         """
-    try:    
-        response=await openAiClient.responses.create(
+    raw_text: Optional[str] = None
+    try:
+        # openAiClient.responses.create() is blocking (sync SDK), so run it in a thread.
+        response = await asyncio.to_thread(
+            openAiClient.responses.create,
             model="gpt-4o",
-            input=QUIZE_GENERATION_PROMPT.replace(f"{{SUMMARY_OUTPUT}}",text)
-        );
-        return response.output[0].content[0].text
+            input=QUIZE_GENERATION_PROMPT.replace(f"{{SUMMARY_OUTPUT}}", text),
+        )
+
+        raw_text = response.output[0].content[0].text
+
+        # The model is instructed to return JSON, but sometimes it includes extra text.
+        # Try parsing the full string first; if it fails, extract the outermost `{ ... }`.
+        try:
+            parsed = json.loads(raw_text)
+        except json.JSONDecodeError:
+            match = re.search(r"\{.*\}", raw_text, flags=re.DOTALL)
+            if not match:
+                raise
+            parsed = json.loads(match.group(0))
+
+        quiz = QuizModel.model_validate(parsed)
+        return {"quiz": quiz.model_dump(), "quiz_raw": raw_text, "parse_error": None}
     except Exception as e:
-        return str(e)    
+        # Return raw error info so the API can include it in `GenerateResponse`.
+        return {"quiz": None, "quiz_raw": raw_text, "parse_error": str(e)}
