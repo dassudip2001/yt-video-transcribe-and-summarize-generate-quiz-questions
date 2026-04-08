@@ -7,7 +7,9 @@ from app.config.openai import openAiClient
 from app.schema.schemas import QuizModel
 
 async def generateQuize(text: str):
-    QUIZE_GENERATION_PROMPT=f""" 
+    # NOTE: This prompt contains JSON braces `{ ... }`. Do NOT use an f-string here,
+    # otherwise Python will try to interpret those braces as format placeholders.
+    QUIZE_GENERATION_PROMPT = """
         You are an expert teacher.
 
         Create a quiz based on the following summary.
@@ -43,7 +45,7 @@ async def generateQuize(text: str):
         }
 
         SUMMARY:
-        {{SUMMARY_OUTPUT}}
+        {SUMMARY_OUTPUT}
         """
     raw_text: Optional[str] = None
     try:
@@ -51,7 +53,7 @@ async def generateQuize(text: str):
         response = await asyncio.to_thread(
             openAiClient.responses.create,
             model="gpt-4o",
-            input=QUIZE_GENERATION_PROMPT.replace(f"{{SUMMARY_OUTPUT}}", text),
+            input=QUIZE_GENERATION_PROMPT.replace("{SUMMARY_OUTPUT}", text),
         )
 
         raw_text = response.output[0].content[0].text
