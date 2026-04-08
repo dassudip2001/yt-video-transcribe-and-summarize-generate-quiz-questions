@@ -4,8 +4,10 @@ from app.config.config import  config
 import uvicorn
 
 # heldth route
-
 from app.api.heldth import router as heldth
+
+# generate video summarization and quize generate serve
+from app.api.route_generate import router as generate
 
 app=FastAPI()
 
@@ -27,6 +29,8 @@ app.add_middleware(
 
 # register
 app.include_router(heldth)
+# generate 
+app.include_router(generate)
 
 
 if __name__=="__main__":
